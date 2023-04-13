@@ -219,12 +219,13 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) 
+    {
 
     HAL_UART_Transmit_IT(&huart1, RxData, Size);
     HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, sizeof(RxData));
     
-}
+    }
 /* USER CODE END 4 */
 
 /**
