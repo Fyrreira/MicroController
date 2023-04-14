@@ -25,7 +25,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t RxData[] = {0};
+uint8_t RxData[100] = {0};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -88,15 +88,15 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, sizeof(RxData)); // Ждем информацию от ПК любого размера
-
+  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 100); // Ждем информацию от ПК любого размера
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-      // Моргание светодиода раз в 1 секунду
+  {// Моргание светодиода раз в 1 секунду(не зависла ли плата)
+     
      HAL_Delay(1000);
      HAL_GPIO_TogglePin(LED13_GPIO_Port, LED13_Pin); 
       
@@ -221,9 +221,13 @@ static void MX_GPIO_Init(void)
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) 
     {
+        if(huart == &huart1)
+        {
+            HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Get the following message from usart1: ", 44, 1000);
+            HAL_UART_Transmit_IT(&huart1, RxData, Size);
 
-    HAL_UART_Transmit_IT(&huart1, RxData, Size);
-    HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, sizeof(RxData));
+        }
+        HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 100);
     
     }
 /* USER CODE END 4 */
