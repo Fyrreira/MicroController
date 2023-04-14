@@ -25,7 +25,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t RxData[100] = {0};
+uint8_t RxData[256] = {0};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -88,7 +88,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 100); // Ждем информацию от ПК любого размера
+  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 256); // Ждем информацию от ПК любого размера
   
   /* USER CODE END 2 */
 
@@ -227,7 +227,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
             HAL_UART_Transmit_IT(&huart1, RxData, Size);
 
         }
-        HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 100);
+        HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 256);
     
     }
 /* USER CODE END 4 */
