@@ -26,6 +26,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 uint8_t RxData[256] = {0};
+uint8_t char1[3] = "rck";
+uint8_t char2[6] = "рус";
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -38,6 +40,8 @@ uint8_t RxData[256] = {0};
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim11;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -48,6 +52,7 @@ UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -86,20 +91,19 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
   
   HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 256); // Ждем информацию от ПК любого размера
+  HAL_TIM_Base_Start_IT(&htim11);
   
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {// Моргание светодиода раз в 1 секунду(не зависла ли плата)
+  {
      
-     HAL_Delay(1000);
-     HAL_GPIO_TogglePin(LED13_GPIO_Port, LED13_Pin); 
-      
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -154,6 +158,37 @@ void SystemClock_Config(void)
   /** Enables the Clock Security System
   */
   HAL_RCC_EnableCSS();
+}
+
+/**
+  * @brief TIM11 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM11_Init(void)
+{
+
+  /* USER CODE BEGIN TIM11_Init 0 */
+
+  /* USER CODE END TIM11_Init 0 */
+
+  /* USER CODE BEGIN TIM11_Init 1 */
+
+  /* USER CODE END TIM11_Init 1 */
+  htim11.Instance = TIM11;
+  htim11.Init.Prescaler = 8399;
+  htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim11.Init.Period = 10000;
+  htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM11_Init 2 */
+
+  /* USER CODE END TIM11_Init 2 */
+
 }
 
 /**
@@ -223,10 +258,23 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     {
         if(huart == &huart1)
         {
-            HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Get the following message from usart1: ", 44, 1000);
-            HAL_UART_Transmit_IT(&huart1, RxData, Size);
+           if(RxData[0] == char1[0] && RxData[1] == char1[1] && RxData[2] == char1[2])
+           {
+              HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Never gonna give you up", 28, 1000); 
+           }
+           else if (RxData[0] == char2[0] && RxData[1] == char2[1] && RxData[2] == char2[2])
+               {//1 символ на кириллице = 2 байта
+               HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Выбор это иллюзия", 36, 2000);
+           }
+           else
+           {
+              HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Get the following message from usart1: ", 44, 1000);
+              HAL_UART_Transmit_IT(&huart1, RxData, Size);
+           }
+         
 
-        }
+        } 
+        
         HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 256);
     
     }
