@@ -21,6 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,12 +42,16 @@ uint8_t char2[6] = "рус";
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+RTC_HandleTypeDef hrtc;
+
 TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-
+RTC_TimeTypeDef sTime = {0};
+RTC_DateTypeDef DateToUpdate = {0};
+char buff[65] = {0,};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -53,6 +59,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM11_Init(void);
+static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -92,6 +99,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_TIM11_Init();
+  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   
   HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 256); // Ждем информацию от ПК любого размера
@@ -103,7 +111,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-     
+    
+    //HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -128,8 +137,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 25;
@@ -158,6 +168,41 @@ void SystemClock_Config(void)
   /** Enables the Clock Security System
   */
   HAL_RCC_EnableCSS();
+}
+
+/**
+  * @brief RTC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_RTC_Init(void)
+{
+
+  /* USER CODE BEGIN RTC_Init 0 */
+
+  /* USER CODE END RTC_Init 0 */
+
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+  /** Initialize RTC Only
+  */
+  hrtc.Instance = RTC;
+  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+  hrtc.Init.AsynchPrediv = 127;
+  hrtc.Init.SynchPrediv = 255;
+  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+  if (HAL_RTC_Init(&hrtc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
+
+  /* USER CODE END RTC_Init 2 */
+
 }
 
 /**
@@ -260,7 +305,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         {
            if(RxData[0] == char1[0] && RxData[1] == char1[1] && RxData[2] == char1[2])
            {
-              HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Never gonna give you up", 28, 1000); 
+               HAL_UART_Transmit(&huart1, (uint8_t*) "\n\r Never gonna give you up", 28, 1000); 
            }
            else if (RxData[0] == char2[0] && RxData[1] == char2[1] && RxData[2] == char2[2])
                {//1 символ на кириллице = 2 байта
@@ -278,6 +323,20 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 256);
     
     }
+    void TIM1_TRG_COM_TIM11_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 0 */
+
+  /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim11);
+  /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 1 */
+    HAL_GPIO_TogglePin(LED13_GPIO_Port, LED13_Pin);
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN); 
+    snprintf(buff, 65, "\n\rTime %d:%d:%d", sTime.Hours, sTime.Minutes, sTime.Seconds);
+    HAL_UART_Transmit(&huart1, (uint8_t*)buff, strlen(buff), 1000);
+    HAL_RTC_GetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BIN);//Unlock time count    
+  /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 1 */
+}
 /* USER CODE END 4 */
 
 /**
